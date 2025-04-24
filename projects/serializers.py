@@ -26,11 +26,8 @@ class ContributorSerializer(serializers.ModelSerializer):
 
 class IssueSerializer(serializers.ModelSerializer):
     author_user = serializers.ReadOnlyField(source="author_user.username")
-    assignee_user = serializers.SlugRelatedField(
-        slug_field="username",
-        queryset=User.objects.all(),
-        required=False,
-        allow_null=True,
+    assignee_user = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), required=False, allow_null=True
     )
 
     class Meta:

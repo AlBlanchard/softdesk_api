@@ -97,4 +97,4 @@ class Comment(models.Model):
     created_time = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Comment by {self.author_user.username} on {self.issue.title}"
+        return f"Commentaire par {self.author_user.username} sur {self.issue.title}"

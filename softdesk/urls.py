@@ -7,7 +7,9 @@ from rest_framework_simplejwt.views import (
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/", include("projects.urls")),
+    path(
+        "api/", include(("projects.urls", "projects"), namespace="api")
+    ),  # namespace pour pouvoir faire reverse dans les tests
     path("api/users/", include("users.urls")),
     # Authentification JWT
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
