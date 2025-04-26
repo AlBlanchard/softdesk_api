@@ -7,13 +7,6 @@ from projects.models import Project, Contributor, Issue
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
-class SimpleTest(APITestCase):
-
-    def test_something(self):
-        user_count = User.objects.count()
-        self.assertEqual(user_count, 0)
-
-
 class ProjectPermissionTests(APITestCase):
 
     def setUp(self):
@@ -184,7 +177,7 @@ class IssuePermissionTests(APITestCase):
             url, {"title": "Titre modifié par l’auteur"}, format="json"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["title"], "Titre modifié par l’auteur")
+        self.assertEqual(response.data["title"], "Titre modifié par l'auteur")
 
     def test_stranger_cannot_view_issue(self):
         issue = Issue.objects.create(

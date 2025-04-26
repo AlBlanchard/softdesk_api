@@ -6,7 +6,7 @@ User = get_user_model()
 
 
 class Project(models.Model):
-    # Enum du type de projet
+    # Enum du type de projet -> A SORTIR(constants.py)
     class ProjectType(models.TextChoices):
         BACK_END = "Back-End", "Back-End"
         FRONT_END = "Front-End", "Front-End"
@@ -40,7 +40,7 @@ class Contributor(models.Model):
         )
 
     def __str__(self):
-        return f"{self.user.username} → {self.project.title}"
+        return f"{self.user.username} -> {self.project.title}"
 
 
 class Issue(models.Model):

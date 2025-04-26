@@ -12,19 +12,17 @@ class IsContributor(BasePermission):
         if request.method == "POST":
             project_id = request.data.get("project")
             if not project_id:
-                return False  # aucune info sur le projet → rejet
+                return False  # aucune info sur le projet = rejet
             return Contributor.objects.filter(
                 user=request.user, project_id=project_id
             ).exists()
-        return True  # autres méthodes, on laisse has_object_permission gérer
+        return True  # autres méthodes, laisse has_object_permission gérer
 
     def has_object_permission(self, request, view, obj):
+        # Dans le cas d'un projet, vérifie si user est contributor
         if isinstance(obj, Project):
             return Contributor.objects.filter(user=request.user, project=obj).exists()
-        elif hasattr(obj, "project"):
-            return Contributor.objects.filter(
-                user=request.user, project=obj.project
-            ).exists()
+        # Dans le cas d'un autre obj, va chercher le projet lié pour vérifier si contributor
         elif isinstance(obj, Issue) or isinstance(obj, Comment):
             return Contributor.objects.filter(
                 user=request.user, project=obj.project
