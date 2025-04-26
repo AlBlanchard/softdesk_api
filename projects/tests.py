@@ -5,6 +5,7 @@ from rest_framework import status
 from django.contrib.auth.models import User
 from projects.models import Project, Contributor, Issue
 from rest_framework_simplejwt.tokens import RefreshToken
+from .constants import ProjectType, Priority, Tag, Status
 
 
 class ProjectPermissionTests(APITestCase):
@@ -94,9 +95,9 @@ class IssuePermissionTests(APITestCase):
         data = {
             "title": "Bug à corriger",
             "description": "Il y a un bug",
-            "tag": Issue.Tag.BUG,
-            "priority": Issue.Priority.HIGH,
-            "status": Issue.Status.TODO,
+            "tag": Tag.BUG,
+            "priority": Priority.HIGH,
+            "status": Status.TODO,
             "project": self.project.id,
             "assignee_user": self.user_author.id,
         }
@@ -111,9 +112,9 @@ class IssuePermissionTests(APITestCase):
         data = {
             "title": "Tentative interdite",
             "description": "Un étranger tente de créer une issue.",
-            "tag": "Bug",
-            "priority": "High",
-            "status": "To Do",
+            "tag": Tag.BUG,
+            "priority": Priority.HIGH,
+            "status": Status.TODO,
             "project": self.project.id,
             "assignee_user": self.user_author.id,
         }
@@ -125,9 +126,9 @@ class IssuePermissionTests(APITestCase):
         issue = Issue.objects.create(
             title="Bug visible",
             description="Un bug qu'on peut lire",
-            tag="Bug",
-            priority="Medium",
-            status="To Do",
+            tag=Tag.BUG,
+            priority=Priority.MEDIUM,
+            status=Status.TODO,
             project=self.project,
             author_user=self.user_author,
             assignee_user=self.user_contributor,
@@ -144,9 +145,9 @@ class IssuePermissionTests(APITestCase):
         issue = Issue.objects.create(
             title="Modifiable seulement par l’auteur",
             description="Tentative de modification interdite",
-            tag="Task",
-            priority="Low",
-            status="To Do",
+            tag=Tag.TASK,
+            priority=Priority.LOW,
+            status=Status.TODO,
             project=self.project,
             author_user=self.user_author,
             assignee_user=self.user_contributor,
@@ -162,9 +163,9 @@ class IssuePermissionTests(APITestCase):
         issue = Issue.objects.create(
             title="Issue modifiable",
             description="Auteur uniquement",
-            tag="Feature",
-            priority="High",
-            status="To Do",
+            tag=Tag.TASK,
+            priority=Priority.HIGH,
+            status=Status.TODO,
             project=self.project,
             author_user=self.user_author,
             assignee_user=self.user_contributor,
@@ -174,7 +175,7 @@ class IssuePermissionTests(APITestCase):
         url = reverse("api:issue-detail", args=[issue.id])
 
         response = self.client.patch(
-            url, {"title": "Titre modifié par l’auteur"}, format="json"
+            url, {"title": "Titre modifié par l'auteur"}, format="json"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["title"], "Titre modifié par l'auteur")
@@ -183,9 +184,9 @@ class IssuePermissionTests(APITestCase):
         issue = Issue.objects.create(
             title="Bug privé",
             description="Visibilité restreinte",
-            tag="Bug",
-            priority="Low",
-            status="To Do",
+            tag=Tag.BUG,
+            priority=Priority.LOW,
+            status=Status.TODO,
             project=self.project,
             author_user=self.user_author,
             assignee_user=self.user_contributor,

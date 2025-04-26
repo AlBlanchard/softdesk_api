@@ -1,18 +1,12 @@
 import uuid
 from django.db import models
 from django.contrib.auth import get_user_model
+from .constants import ProjectType, Priority, Tag, Status
 
 User = get_user_model()
 
 
 class Project(models.Model):
-    # Enum du type de projet -> A SORTIR(constants.py)
-    class ProjectType(models.TextChoices):
-        BACK_END = "Back-End", "Back-End"
-        FRONT_END = "Front-End", "Front-End"
-        IOS = "iOS", "iOS"
-        ANDROID = "Android", "Android"
-
     title = models.CharField(max_length=128)
     description = models.TextField()
     type = models.CharField(max_length=20, choices=ProjectType.choices)
@@ -44,20 +38,6 @@ class Contributor(models.Model):
 
 
 class Issue(models.Model):
-    class Priority(models.TextChoices):
-        LOW = "Low", "Low"
-        MEDIUM = "Medium", "Medium"
-        HIGH = "High", "High"
-
-    class Tag(models.TextChoices):
-        BUG = "Bug", "Bug"
-        FEATURE = "Feature", "Feature"
-        TASK = "Task", "Task"
-
-    class Status(models.TextChoices):
-        TODO = "To Do", "To Do"
-        IN_PROGRESS = "In Progress", "In Progress"
-        FINISHED = "Finished", "Finished"
 
     title = models.CharField(max_length=128)
     description = models.TextField()
