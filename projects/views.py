@@ -67,7 +67,7 @@ class IssueViewSet(viewsets.ModelViewSet):
         return Issue.objects.all()
 
     def perform_create(self, serializer):
-        serializer.save(author_user=self.request.user)
+        serializer.save(author=self.request.user)
 
     def get_permissions(self):
         if self.action in ["create", "list", "retrieve"]:
@@ -86,5 +86,18 @@ class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
     permission_classes = [drf_permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        return Comment.objects.all()
+
     def perform_create(self, serializer):
-        serializer.save(author_user=self.request.user)
+        issue_id = self.request.data.get("issue")
+        issue = Issue.objects.get(id=issue_id)
+        serializer.save(author=self.request.user, issue=issue)
+
+    def get_permissions(self):
+        if self.action in ["create", "list", "retrieve"]:
+            return [drf_permissions.IsAuthenticated(), IsContributor()]
+        elif self.action in ["update", "partial_update", "destroy"]:
+            return [drf_permissions.IsAuthenticated(), IsAuthor()]
+
+        return [drf_permissions.IsAuthenticated()]

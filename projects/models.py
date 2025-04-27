@@ -50,7 +50,7 @@ class Issue(models.Model):
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name="issues"
     )
-    author_user = models.ForeignKey(
+    author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="issues_created"
     )
     assignee_user = models.ForeignKey(
@@ -70,11 +70,11 @@ class Issue(models.Model):
 class Comment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     description = models.TextField()
-    author_user = models.ForeignKey(
+    author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="comments"
     )
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="comments")
     created_time = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Commentaire par {self.author_user.username} sur {self.issue.title}"
+        return f"Commentaire par {self.author.username} sur {self.issue.title}"

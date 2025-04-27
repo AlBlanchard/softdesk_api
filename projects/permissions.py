@@ -10,12 +10,29 @@ class IsContributor(BasePermission):
 
     def has_permission(self, request, view):
         if request.method == "POST":
-            project_id = request.data.get("project")
-            if not project_id:
-                return False  # aucune info sur le projet = rejet
-            return Contributor.objects.filter(
-                user=request.user, project_id=project_id
-            ).exists()
+            if "project" in request.data:
+                # Création d'une Issue : vérifie via le projet
+                project_id = request.data.get("project")
+                if not project_id:
+                    return False
+                return Contributor.objects.filter(
+                    user=request.user, project_id=project_id
+                ).exists()
+            elif "issue" in request.data:
+                # Création d'un Comment : vérifie via l'issue liée
+                issue_id = request.data.get("issue")
+                if not issue_id:
+                    return False
+                try:
+                    issue = Issue.objects.get(pk=issue_id)
+                except Issue.DoesNotExist:
+                    return False
+                return Contributor.objects.filter(
+                    user=request.user, project=issue.project
+                ).exists()
+            else:
+                # Aucun project ni issue trouvé = interdit
+                return False
         return True  # autres méthodes, laisse has_object_permission gérer
 
     def has_object_permission(self, request, view, obj):
@@ -23,9 +40,13 @@ class IsContributor(BasePermission):
         if isinstance(obj, Project):
             return Contributor.objects.filter(user=request.user, project=obj).exists()
         # Dans le cas d'un autre obj, va chercher le projet lié pour vérifier si contributor
-        elif isinstance(obj, Issue) or isinstance(obj, Comment):
+        elif isinstance(obj, Issue):
             return Contributor.objects.filter(
                 user=request.user, project=obj.project
+            ).exists()
+        elif isinstance(obj, Comment):
+            return Contributor.objects.filter(
+                user=request.user, project=obj.issue.project
             ).exists()
         return False
 
@@ -58,4 +79,4 @@ class IsAuthorOrReadOnly(BasePermission):
 
 class IsIssueAuthor(BasePermission):
     def has_object_permission(self, request, view, obj):
-        return obj.author_user == request.user
+        return obj.author == request.user

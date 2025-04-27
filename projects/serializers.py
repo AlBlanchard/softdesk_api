@@ -25,7 +25,7 @@ class ContributorSerializer(serializers.ModelSerializer):
 
 
 class IssueSerializer(serializers.ModelSerializer):
-    author_user = serializers.ReadOnlyField(source="author_user.username")
+    author = serializers.ReadOnlyField(source="author.username")
     assignee_user = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(), required=False, allow_null=True
     )
@@ -40,18 +40,18 @@ class IssueSerializer(serializers.ModelSerializer):
             "priority",
             "status",
             "project",
-            "author_user",
+            "author",
             "assignee_user",
             "created_time",
         ]
-        read_only_fields = ["id", "author_user", "created_time"]
+        read_only_fields = ["id", "author", "created_time"]
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    author_user = serializers.ReadOnlyField(source="author_user.username")
+    author = serializers.ReadOnlyField(source="author.username")
     issue = serializers.ReadOnlyField(source="issue.id")
 
     class Meta:
         model = Comment
-        fields = ["id", "description", "author_user", "issue", "created_time"]
-        read_only_fields = ["id", "author_user", "issue", "created_time"]
+        fields = ["id", "description", "author", "issue", "created_time"]
+        read_only_fields = ["id", "author", "issue", "created_time"]
