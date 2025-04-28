@@ -64,7 +64,8 @@ class IssueViewSet(viewsets.ModelViewSet):
     ]
 
     def get_queryset(self):
-        return Issue.objects.all()
+        user = self.request.user
+        return Issue.objects.filter(project__contributors__user=user).distinct()
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -87,7 +88,10 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = [drf_permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Comment.objects.all()
+        user = self.request.user
+        return Comment.objects.filter(
+            issue__project__contributors__user=user
+        ).distinct()
 
     def perform_create(self, serializer):
         issue_id = self.request.data.get("issue")

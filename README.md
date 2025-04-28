@@ -12,3 +12,13 @@ pipenv shell
 python manage.py migrate
 python manage.py runserver
 ```
+
+## Pour générer des données tests
+
+```bash
+python scripts/generate_fake_data.py
+```
+
+```bash
+python scripts/clean_fake_data.py
+```   
