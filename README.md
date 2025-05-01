@@ -21,4 +21,4 @@ python scripts/generate_fake_data.py
 
 ```bash
 python scripts/clean_fake_data.py
-```   
+```

@@ -10,30 +10,40 @@ class IsContributor(BasePermission):
 
     def has_permission(self, request, view):
         if request.method == "POST":
-            if "project" in request.data:
-                # Création d'une Issue : vérifie via le projet
-                project_id = request.data.get("project")
-                if not project_id:
-                    return False
-                return Contributor.objects.filter(
-                    user=request.user, project_id=project_id
-                ).exists()
-            elif "issue" in request.data:
-                # Création d'un Comment : vérifie via l'issue liée
-                issue_id = request.data.get("issue")
+            # Création via project nested /projects/{project_pk}/issues/
+            project_id = (
+                request.data.get("project") or view.kwargs.get("project_pk") or None
+            )
+
+            # création d'un commentaire via issue nested /projects/{project_pk}/issues/{issue_pk}/comments/
+            if not project_id:
+                issue_id = request.data.get("issue") or view.kwargs.get("issue_pk")
                 if not issue_id:
                     return False
                 try:
                     issue = Issue.objects.get(pk=issue_id)
+                    project_id = issue.project.id
                 except Issue.DoesNotExist:
                     return False
-                return Contributor.objects.filter(
-                    user=request.user, project=issue.project
-                ).exists()
-            else:
-                # Aucun project ni issue trouvé = interdit
-                return False
-        return True  # autres méthodes, laisse has_object_permission gérer
+
+            return Contributor.objects.filter(
+                user=request.user, project_id=project_id
+            ).exists()
+
+        return True  # GET, etc délégué à has_object_permission
+
+    def has_object_permission(self, request, view, obj):
+        if isinstance(obj, Project):
+            return Contributor.objects.filter(user=request.user, project=obj).exists()
+        elif isinstance(obj, Issue):
+            return Contributor.objects.filter(
+                user=request.user, project=obj.project
+            ).exists()
+        elif isinstance(obj, Comment):
+            return Contributor.objects.filter(
+                user=request.user, project=obj.issue.project
+            ).exists()
+        return False
 
     def has_object_permission(self, request, view, obj):
         # Dans le cas d'un projet, vérifie si user est contributor
@@ -63,15 +73,12 @@ class IsAuthor(permissions.BasePermission):
 class IsAuthorOrReadOnly(BasePermission):
     """
     L'utilisateur peut modifier l'objet seulement s'il en est l'auteur.
-    Sinon, il ne peut que le lire.
+    Sinon, il peut uniquement le lire.
     """
 
     def has_object_permission(self, request, view, obj):
-        if isinstance(obj, Project):
-            project = obj
-        elif hasattr(obj, "project"):
-            project = obj.project
-        else:
-            return False
-
-        return Contributor.objects.filter(user=request.user, project=project).exists()
+        # Lecture autorisée
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        # Écriture seulement si auteur
+        return obj.author == request.user

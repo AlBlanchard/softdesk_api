@@ -43,17 +43,20 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
 class ContributorViewSet(viewsets.ModelViewSet):
     """
-    ViewSet pour gérer les contributeurs.
+    ViewSet pour gérer les contributeurs d'un projet.
     """
 
-    queryset = Contributor.objects.all()
     serializer_class = ContributorSerializer
     permission_classes = [drf_permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        project_id = self.kwargs["project_pk"]
+        return Contributor.objects.filter(project__id=project_id)
 
 
 class IssueViewSet(viewsets.ModelViewSet):
     """
-    ViewSet pour gérer les issues.
+    ViewSet pour gérer les issues d'un projet.
     """
 
     serializer_class = IssueSerializer
@@ -65,10 +68,15 @@ class IssueViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return Issue.objects.filter(project__contributors__user=user).distinct()
+        project_id = self.kwargs["project_pk"]
+        return Issue.objects.filter(
+            project__id=project_id, project__contributors__user=user
+        )
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        project_id = self.kwargs["project_pk"]  # Récupère l'id du projet dans l'URL
+        project = Project.objects.get(pk=project_id)
+        serializer.save(author=self.request.user, project=project)
 
     def get_permissions(self):
         if self.action in ["create", "list", "retrieve"]:
@@ -80,21 +88,20 @@ class IssueViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     """
-    ViewSet pour gérer les commentaires.
+    ViewSet pour gérer les commentaires d'une issue.
     """
 
-    queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [drf_permissions.IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
+        issue_id = self.kwargs["issue_pk"]
         return Comment.objects.filter(
-            issue__project__contributors__user=user
-        ).distinct()
+            issue__id=issue_id, issue__project__contributors__user=self.request.user
+        )
 
     def perform_create(self, serializer):
-        issue_id = self.request.data.get("issue")
+        issue_id = self.kwargs["issue_pk"]
         issue = Issue.objects.get(id=issue_id)
         serializer.save(author=self.request.user, issue=issue)
 
@@ -103,5 +110,4 @@ class CommentViewSet(viewsets.ModelViewSet):
             return [drf_permissions.IsAuthenticated(), IsContributor()]
         elif self.action in ["update", "partial_update", "destroy"]:
             return [drf_permissions.IsAuthenticated(), IsAuthor()]
-
         return [drf_permissions.IsAuthenticated()]

@@ -44,7 +44,7 @@ class IssueSerializer(serializers.ModelSerializer):
             "assignee_user",
             "created_time",
         ]
-        read_only_fields = ["id", "author", "created_time"]
+        read_only_fields = ["id", "author", "project", "created_time"]
 
 
 class CommentSerializer(serializers.ModelSerializer):
