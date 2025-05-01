@@ -1,6 +1,32 @@
+
 # SoftDesk API
 
-API RESTful développée en Django REST Framework pour la gestion de projets, de problèmes (issues) et de commentaires.
+**SoftDesk API** est une API RESTful développée avec **Django REST Framework**, permettant la gestion de projets, de tâches (issues) et de commentaires. Elle respecte les standards **OWASP**, le **RGPD**, et s'inscrit dans une démarche **Green Code** grâce à la mise en place d'une pagination efficace.
+
+----------
+
+## Fonctionnalités
+
+-   Authentification via JWT (JSON Web Token)
+    
+-   Gestion des utilisateurs avec consentement RGPD
+    
+-   Création et gestion de projets
+    
+-   Ajout de contributeurs aux projets
+    
+-   Création et suivi d'issues avec priorités, tags et statuts
+    
+-   Commentaires sur les issues
+    
+-   Pagination intégrée
+    
+-   Permissions avancées selon le rôle (auteur, contributeur)
+    
+-   Système complet de tests automatisés
+    
+
+----------
 
 ## Installation
 
@@ -11,14 +37,106 @@ pipenv install
 pipenv shell
 python manage.py migrate
 python manage.py runserver
+
 ```
 
-## Pour générer des données tests
+----------
+
+## Authentification JWT
+
+### Obtenir un token
+
+```
+POST /api/token/
+
+```
+
+### Rafraîchir un token
+
+```
+POST /api/token/refresh/
+
+```
+
+----------
+
+## Générer des données de test
 
 ```bash
 python scripts/generate_fake_data.py
+
 ```
+
+### Supprimer les données de test
 
 ```bash
 python scripts/clean_fake_data.py
+
+```
+
+----------
+
+## Endpoints principaux
+
+Ressource
+
+Endpoint
+
+Utilisateurs
+
+`/api/users/`
+
+Projets
+
+`/api/projects/projects/`
+
+Contributeurs
+
+`/api/projects/projects/{id}/contributors/`
+
+Issues
+
+`/api/projects/projects/{id}/issues/`
+
+Commentaires
+
+`/api/projects/projects/{id}/issues/{id}/comments/`
+
+> L’API supporte également les routes classiques sans nesting.
+
+----------
+
+## Sécurité & conformité
+
+-   Authentification sécurisée (JWT)
+    
+-   Contrôle des accès (permissions selon rôle et ressource)
+    
+-   Age minimum vérifié à l’inscription (conformité RGPD)
+    
+-   Consentement explicite pour la collecte et le partage de données
+    
+-   Suppression complète des comptes utilisateurs (droit à l’oubli)
+    
+
+----------
+
+## Green Code
+
+-   Pagination pour limiter les requêtes lourdes
+    
+-   Réduction des charges serveur via endpoints optimisés
+    
+-   Aucun nesting excessif dans les réponses
+    
+
+----------
+
+## Tests
+
+Lancer l’ensemble des tests :
+
+```bash
+python manage.py test
+
 ```

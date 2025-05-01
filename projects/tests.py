@@ -1,27 +1,31 @@
-from urllib import response
 from rest_framework.test import APITestCase
 from django.urls import reverse
 from rest_framework import status
-from django.contrib.auth.models import User
-from projects.models import Project, Contributor, Issue, Comment
 from rest_framework_simplejwt.tokens import RefreshToken
-from .constants import Priority, Tag, Status
 
 from users.models import CustomUser as User
+from projects.models import Project, Contributor, Issue, Comment
+from .constants import Priority, Tag, Status
 
 
-class ProjectPermissionTests(APITestCase):
+class BaseAPITestCase(APITestCase):
+    """Factorisation de la création d’utilisateurs et de l’authentification."""
+
+    def create_user(self, username):
+        return User.objects.create_user(username=username, password="pass", age=20)
+
+    def authenticate(self, user):
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+
+
+class ProjectPermissionTests(BaseAPITestCase):
 
     def setUp(self):
-        self.user_author = User.objects.create_user(
-            username="author", password="pass", age=20
-        )
-        self.user_contributor = User.objects.create_user(
-            username="contributor", password="pass", age=20
-        )
-        self.user_stranger = User.objects.create_user(
-            username="stranger", password="pass", age=20
-        )
+        self.user_author = self.create_user("author")
+        self.user_contributor = self.create_user("contributor")
+        self.user_stranger = self.create_user("stranger")
 
         self.project = Project.objects.create(
             title="Mon Super Projet",
@@ -29,54 +33,40 @@ class ProjectPermissionTests(APITestCase):
             type="Back-End",
             author=self.user_author,
         )
-
-        self.project.refresh_from_db()  # Refresh pour que le test ait la dernière version de l'objet
-
         Contributor.objects.create(user=self.user_author, project=self.project)
         Contributor.objects.create(user=self.user_contributor, project=self.project)
 
-    def authenticate(self, user):
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
-
     def test_author_can_update_project(self):
         self.authenticate(self.user_author)
-        url = reverse("projects:project-detail", args=[int(self.project.id)])
+        url = reverse("projects:project-detail", args=[self.project.id])
         response = self.client.patch(url, {"title": "Nouveau Titre"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_contributor_cannot_update_project(self):
         self.authenticate(self.user_contributor)
-        url = reverse("projects:project-detail", args=[int(self.project.id)])
+        url = reverse("projects:project-detail", args=[self.project.id])
         response = self.client.patch(url, {"title": "Hacking Attempt"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_stranger_cannot_access_project(self):
         self.authenticate(self.user_stranger)
-        url = reverse("projects:project-detail", args=[int(self.project.id)])
+        url = reverse("projects:project-detail", args=[self.project.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_contributor_can_view_project(self):
         self.authenticate(self.user_contributor)
-        url = reverse("projects:project-detail", args=[int(self.project.id)])
+        url = reverse("projects:project-detail", args=[self.project.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-class IssuePermissionTests(APITestCase):
+class IssuePermissionTests(BaseAPITestCase):
 
     def setUp(self):
-        self.user_author = User.objects.create_user(
-            username="author", password="pass", age=20
-        )
-        self.user_contributor = User.objects.create_user(
-            username="contributor", password="pass", age=20
-        )
-        self.user_stranger = User.objects.create_user(
-            username="stranger", password="pass", age=20
-        )
+        self.user_author = self.create_user("author")
+        self.user_contributor = self.create_user("contributor")
+        self.user_stranger = self.create_user("stranger")
 
         self.project = Project.objects.create(
             title="Projet Test",
@@ -87,17 +77,9 @@ class IssuePermissionTests(APITestCase):
         Contributor.objects.create(user=self.user_author, project=self.project)
         Contributor.objects.create(user=self.user_contributor, project=self.project)
 
-        self.authenticate(self.user_contributor)
-
-    def authenticate(self, user):
-        from rest_framework_simplejwt.tokens import RefreshToken
-
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
-
     def test_contributor_can_create_issue(self):
-        url = reverse("projects:issue-list")
+        self.authenticate(self.user_contributor)
+        url = reverse("projects:project-issues-list", args=[self.project.id])
         data = {
             "title": "Bug à corriger",
             "description": "Il y a un bug",
@@ -113,8 +95,7 @@ class IssuePermissionTests(APITestCase):
 
     def test_stranger_cannot_create_issue(self):
         self.authenticate(self.user_stranger)
-
-        url = reverse("projects:issue-list")
+        url = reverse("projects:project-issues-list", args=[self.project.id])
         data = {
             "title": "Tentative interdite",
             "description": "Un étranger tente de créer une issue.",
@@ -139,17 +120,17 @@ class IssuePermissionTests(APITestCase):
             author=self.user_author,
             assignee_user=self.user_contributor,
         )
-
         self.authenticate(self.user_contributor)
-        url = reverse("projects:issue-detail", args=[issue.id])
-
+        url = reverse(
+            "projects:project-issues-detail", args=[self.project.id, issue.id]
+        )
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["title"], "Bug visible")
 
     def test_contributor_cannot_update_issue(self):
         issue = Issue.objects.create(
-            title="Modifiable seulement par l’auteur",
+            title="Modifiable seulement par l'auteur",
             description="Tentative de modification interdite",
             tag=Tag.TASK,
             priority=Priority.LOW,
@@ -158,10 +139,10 @@ class IssuePermissionTests(APITestCase):
             author=self.user_author,
             assignee_user=self.user_contributor,
         )
-
-        self.authenticate(self.user_contributor)  # Pas l'auteur
-        url = reverse("projects:issue-detail", args=[issue.id])
-
+        self.authenticate(self.user_contributor)
+        url = reverse(
+            "projects:project-issues-detail", args=[self.project.id, issue.id]
+        )
         response = self.client.patch(url, {"title": "HACKED"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -176,10 +157,10 @@ class IssuePermissionTests(APITestCase):
             author=self.user_author,
             assignee_user=self.user_contributor,
         )
-
         self.authenticate(self.user_author)
-        url = reverse("projects:issue-detail", args=[issue.id])
-
+        url = reverse(
+            "projects:project-issues-detail", args=[self.project.id, issue.id]
+        )
         response = self.client.patch(
             url, {"title": "Titre modifié par l'auteur"}, format="json"
         )
@@ -197,26 +178,21 @@ class IssuePermissionTests(APITestCase):
             author=self.user_author,
             assignee_user=self.user_contributor,
         )
-
         self.authenticate(self.user_stranger)
-        url = reverse("projects:issue-detail", args=[issue.id])
-
+        url = reverse(
+            "projects:project-issues-detail", args=[self.project.id, issue.id]
+        )
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # on s'attend désormais à un 404, pas 403
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-class CommentPermissionTests(APITestCase):
+class CommentPermissionTests(BaseAPITestCase):
 
     def setUp(self):
-        self.user_author = User.objects.create_user(
-            username="author", password="pass", age=20
-        )
-        self.user_contributor = User.objects.create_user(
-            username="contributor", password="pass", age=20
-        )
-        self.user_stranger = User.objects.create_user(
-            username="stranger", password="pass", age=20
-        )
+        self.user_author = self.create_user("author")
+        self.user_contributor = self.create_user("contributor")
+        self.user_stranger = self.create_user("stranger")
 
         self.project = Project.objects.create(
             title="Projet Test",
@@ -228,8 +204,9 @@ class CommentPermissionTests(APITestCase):
         self.issue = Issue.objects.create(
             title="Bug visible",
             description="Un bug",
-            tag="Bug",
-            priority="High",
+            tag=Tag.BUG,
+            priority=Priority.HIGH,
+            status=Status.TODO,
             project=self.project,
             author=self.user_author,
             assignee_user=self.user_author,
@@ -242,57 +219,46 @@ class CommentPermissionTests(APITestCase):
             description="Premier commentaire", author=self.user_author, issue=self.issue
         )
 
-    def authenticate(self, user):
-        """Authentification helper pour simuler l'utilisateur connecté."""
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
-
     def test_contributor_can_create_comment(self):
         self.authenticate(self.user_contributor)
-        url = reverse(
-            "projects:comment-list"
-        )  # Utilise le nom du router pour les commentaires
-
-        data = {"description": "Nouveau commentaire", "issue": self.issue.id}
-
-        response = self.client.post(url, data, format="json")
-
+        url = (
+            f"/api/projects/projects/{self.project.id}/issues/{self.issue.id}/comments/"
+        )
+        response = self.client.post(
+            url, {"description": "Nouveau commentaire"}, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_contributor_can_view_comment(self):
         self.authenticate(self.user_contributor)
-        url = reverse("projects:comment-detail", args=[self.comment.id])
+        url = f"/api/projects/projects/{self.project.id}/issues/{self.issue.id}/comments/{self.comment.id}/"
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_contributor_cannot_update_comment(self):
-        """
-        Vérifie qu'un contributeur ne peut pas modifier un commentaire qu'il n'a pas créé.
-        """
         self.authenticate(self.user_contributor)
-        url = reverse("projects:comment-detail", args=[str(self.comment.id)])
-        data = {"description": "Tentative de modification interdite"}
-        response = self.client.patch(url, data, format="json")
+        url = f"/api/projects/projects/{self.project.id}/issues/{self.issue.id}/comments/{self.comment.id}/"
+        response = self.client.patch(url, {"description": "hack"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_stranger_cannot_create_comment(self):
         self.authenticate(self.user_stranger)
-        url = reverse("projects:comment-list")
-        data = {
-            "description": "Je ne devrais pas pouvoir poster ce commentaire.",
-            "issue": self.issue.id,
-        }
-        response = self.client.post(url, data, format="json")
+        url = (
+            f"/api/projects/projects/{self.project.id}/issues/{self.issue.id}/comments/"
+        )
+        response = self.client.post(
+            url, {"description": "stranger fail"}, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_author_can_update_comment(self):
         self.authenticate(self.user_author)
-        url = reverse("projects:comment-detail", args=[self.comment.id])
-        updated_data = {"description": "Nouveau contenu du commentaire"}
-        response = self.client.patch(url, updated_data, format="json")
+        url = f"/api/projects/projects/{self.project.id}/issues/{self.issue.id}/comments/{self.comment.id}/"
+        response = self.client.patch(
+            url, {"description": "modification"}, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Recharge l'objet en DB et vérifie que la modification est effective
+        # on recharge et vérifie bien la nouvelle valeur
         self.comment.refresh_from_db()
-        self.assertEqual(self.comment.description, "Nouveau contenu du commentaire")
+        self.assertEqual(self.comment.description, "modification")
