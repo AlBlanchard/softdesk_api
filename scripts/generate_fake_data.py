@@ -3,7 +3,7 @@ import django
 import random
 import sys
 
-# Ajouter la racine du projet au PYTHONPATH
+# Ajoute la racine du projet au PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "softdesk.settings")
@@ -26,7 +26,7 @@ def generate_data():
         )
 
         if created:
-            user.set_password("djangotest10")  # ça hash correctement le mot de passe
+            user.set_password("djangotest10")  # hash correctement le mot de passe
             user.save()
         return user
 

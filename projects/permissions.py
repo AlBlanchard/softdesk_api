@@ -53,7 +53,7 @@ class IsContributor(BasePermission):
 
 class IsAuthor(permissions.BasePermission):
     """
-    Autorise la modif ou suppression si le user est l'auteur du projet.
+    Autorise la modif ou suppression si le user est l'auteur de l'objet.
     """
 
     def has_object_permission(self, request, view, obj):
@@ -75,8 +75,3 @@ class IsAuthorOrReadOnly(BasePermission):
             return False
 
         return Contributor.objects.filter(user=request.user, project=project).exists()
-
-
-class IsIssueAuthor(BasePermission):
-    def has_object_permission(self, request, view, obj):
-        return obj.author == request.user

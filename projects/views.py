@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 from rest_framework import permissions as drf_permissions
-from .permissions import IsAuthor, IsContributor, IsAuthorOrReadOnly, IsIssueAuthor
+from .permissions import IsAuthor, IsContributor, IsAuthorOrReadOnly
 from .models import Project, Contributor, Issue, Comment
 from .serializers import (
     ProjectSerializer,
@@ -74,7 +74,7 @@ class IssueViewSet(viewsets.ModelViewSet):
         if self.action in ["create", "list", "retrieve"]:
             return [drf_permissions.IsAuthenticated(), IsContributor()]
         elif self.action in ["update", "partial_update", "destroy"]:
-            return [drf_permissions.IsAuthenticated(), IsIssueAuthor()]
+            return [drf_permissions.IsAuthenticated(), IsAuthor()]
         return [drf_permissions.IsAuthenticated()]
 
 
