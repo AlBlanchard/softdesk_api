@@ -32,13 +32,39 @@
 
 ```bash
 git clone https://github.com/AlBlanchard/softdesk_api.git
+
+```
+
+```bash
 cd softdesk_api
+
+```
+
+```bash
 pipenv install
+
+```
+
+```bash
 pipenv shell
+
+```
+
+```bash
+python manage.py makemigrations
+
+```
+
+```bash
 python manage.py migrate
+
+```
+
+```bash
 python manage.py runserver
 
 ```
+
 
 ----------
 
