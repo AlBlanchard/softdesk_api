@@ -54,29 +54,27 @@ class ContributorViewSet(viewsets.ModelViewSet):
         return Contributor.objects.filter(project__id=project_id)
 
 
-class IssueViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet pour gérer les issues d'un projet.
-    """
+# views.py
 
+class IssueViewSet(viewsets.ModelViewSet):
     serializer_class = IssueSerializer
-    permission_classes = [
-        drf_permissions.IsAuthenticated,
-        IsContributor,
-        IsAuthorOrReadOnly,
-    ]
 
     def get_queryset(self):
-        user = self.request.user
-        project_id = self.kwargs["project_pk"]
-        return Issue.objects.filter(
-            project__id=project_id, project__contributors__user=user
-        )
+        qs = Issue.objects.all().distinct()
+        project_pk = self.kwargs.get("project_pk")
 
-    def perform_create(self, serializer):
-        project_id = self.kwargs["project_pk"]  # Récupère l'id du projet dans l'URL
-        project = Project.objects.get(pk=project_id)
-        serializer.save(author=self.request.user, project=project)
+        if project_pk:
+            # nested : on ne voit que les issues du projet auxquelles on a accès
+            qs = qs.filter(
+                project__id=project_pk,
+                project__contributors__user=self.request.user
+            )
+        elif self.action == "list":
+            # flat list : tous les projets auxquels je contribue
+            qs = qs.filter(
+                project__contributors__user=self.request.user
+            )
+        return qs
 
     def get_permissions(self):
         if self.action in ["create", "list", "retrieve"]:
@@ -85,24 +83,42 @@ class IssueViewSet(viewsets.ModelViewSet):
             return [drf_permissions.IsAuthenticated(), IsAuthor()]
         return [drf_permissions.IsAuthenticated()]
 
+    def perform_create(self, serializer):
+        project_pk = self.kwargs.get("project_pk")
+        if project_pk:
+            project = Project.objects.get(pk=project_pk)
+        else:
+            project = serializer.validated_data.get("project")
+        serializer.save(author=self.request.user, project=project)
+
+    def perform_create(self, serializer):
+        project_pk = self.kwargs.get("project_pk")
+        if project_pk:
+            project = Project.objects.get(pk=project_pk)
+        else:
+            project = serializer.validated_data.get("project")
+        serializer.save(author=self.request.user, project=project)
+
+
 
 class CommentViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet pour gérer les commentaires d'une issue.
-    """
-
     serializer_class = CommentSerializer
     permission_classes = [drf_permissions.IsAuthenticated]
 
     def get_queryset(self):
-        issue_id = self.kwargs["issue_pk"]
-        return Comment.objects.filter(
-            issue__id=issue_id, issue__project__contributors__user=self.request.user
-        )
+        qs = Comment.objects.filter(
+            issue__project__contributors__user=self.request.user
+        ).distinct()
+        if "issue_pk" in self.kwargs:
+            qs = qs.filter(issue__id=self.kwargs["issue_pk"])
+        return qs
 
     def perform_create(self, serializer):
-        issue_id = self.kwargs["issue_pk"]
-        issue = Issue.objects.get(id=issue_id)
+        issue_id = self.kwargs.get("issue_pk")
+        if issue_id:
+            issue = Issue.objects.get(pk=issue_id)
+        else:
+            issue = serializer.validated_data.get("issue")
         serializer.save(author=self.request.user, issue=issue)
 
     def get_permissions(self):
