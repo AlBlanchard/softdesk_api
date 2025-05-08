@@ -82,19 +82,28 @@ python scripts/generate_fake_data.py
 Deux utilisateurs seront créés, ainsi que 30 projets avec des issues et commentaires.
 
 ### L'auteur :
+
   
+
 Nom d'utilsateur : 
 
 > authortest
+
  
 Mot de passe : 
 
 > djangotest10
+
   
+
 L'auteur a créé 30 projets, des issues et commentaires associés.
+
   
+
 ### Le contributeur :
+
   
+
 Nom d'utilisateur : 
 
 > contributortest
