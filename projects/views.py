@@ -22,6 +22,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
         """
         Retourne la liste des projets de l'utilisateur connecté.
         """
+        # drf-yasg schema generation => on retourne un queryset neutre (sinon erreur)
+        if getattr(self, 'swagger_fake_view', False):
+            return Project.objects.none()
+        
         user = self.request.user
         return Project.objects.filter(contributors__user=user).distinct()
 
@@ -50,7 +54,14 @@ class ContributorViewSet(viewsets.ModelViewSet):
     permission_classes = [drf_permissions.IsAuthenticated]
 
     def get_queryset(self):
-        project_id = self.kwargs["project_pk"]
+        # si drf-yasg fait son boulot, on évite tout filtrage
+        if getattr(self, 'swagger_fake_view', False):
+            return Contributor.objects.none()
+
+        project_id = self.kwargs.get("project_pk")
+        # attention à get() plutôt que [] pour éviter KeyError
+        if project_id is None:
+            return Contributor.objects.all()
         return Contributor.objects.filter(project__id=project_id)
 
 
@@ -60,20 +71,17 @@ class IssueViewSet(viewsets.ModelViewSet):
     serializer_class = IssueSerializer
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Issue.objects.none()
         qs = Issue.objects.all().distinct()
         project_pk = self.kwargs.get("project_pk")
-
         if project_pk:
-            # nested : on ne voit que les issues du projet auxquelles on a accès
             qs = qs.filter(
                 project__id=project_pk,
                 project__contributors__user=self.request.user
             )
         elif self.action == "list":
-            # flat list : tous les projets auxquels je contribue
-            qs = qs.filter(
-                project__contributors__user=self.request.user
-            )
+            qs = qs.filter(project__contributors__user=self.request.user)
         return qs
 
     def get_permissions(self):
@@ -106,11 +114,17 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = [drf_permissions.IsAuthenticated]
 
     def get_queryset(self):
-        qs = Comment.objects.filter(
-            issue__project__contributors__user=self.request.user
-        ).distinct()
-        if "issue_pk" in self.kwargs:
-            qs = qs.filter(issue__id=self.kwargs["issue_pk"])
+        if getattr(self, 'swagger_fake_view', False):
+            return Comment.objects.none()
+        qs = Comment.objects.all().distinct()
+        issue_pk = self.kwargs.get("issue_pk")
+        if issue_pk:
+            qs = qs.filter(
+                issue__id=issue_pk,
+                issue__project__contributors__user=self.request.user
+            )
+        elif self.action == "list":
+            qs = qs.filter(issue__project__contributors__user=self.request.user)
         return qs
 
     def perform_create(self, serializer):
