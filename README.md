@@ -42,6 +42,18 @@ python manage.py runserver
 
 ----------
 
+## Documentation
+
+Une documentation présentant les différentes routes est disponible.
+Pour cela il suffit de lancer le serveur.
+
+```bash
+python mangane.py runserver
+
+```
+
+Puis avec son navigateur aller sur l'adresse locale à la racine du projet.
+
 ## Authentification JWT
 
 ### Obtenir un token
@@ -66,6 +78,21 @@ POST /api/token/refresh/
 python scripts/generate_fake_data.py
 
 ```
+
+Deux utilisateurs seront créés, ainsi que 30 projets avec des issues et commentaires.
+
+Il y a l'auteur des projets, issues, commentaires :
+
+> Nom d'utilsateur  :   authortest
+> Mot de passe      :   djangotest10
+
+Puis le contributeur :
+
+> Nom d'utilisateur :   contributortest
+> Mot de passe      :   djangotest20
+
+Le contributeur est ajouté comme contributeur sur les projets aléatoirement.
+Il est très peu probable qu'il puisse accéder à tous les projets créés. 
 
 ### Supprimer les données de test
 
