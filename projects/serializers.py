@@ -89,6 +89,21 @@ class IssueSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "author", "created_time"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Si on est sur une route imbriquée (project_pk dans l'URL)
+        view = self.context.get("view", None)
+        if view and view.kwargs.get("project_pk") is not None:
+            # on ne requiert pas le champ project dans le body
+            self.fields["project"].required = False
+
+    def create(self, validated_data):
+        view = self.context.get("view", None)
+        # Si project_pk est présent, on l'utilise
+        if view and view.kwargs.get("project_pk"):
+            project_pk = view.kwargs["project_pk"]
+            validated_data["project"] = Project.objects.get(pk=project_pk)
+        return super().create(validated_data)
 
 class CommentSerializer(serializers.ModelSerializer):
     """
