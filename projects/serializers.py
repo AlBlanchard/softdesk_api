@@ -19,12 +19,12 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = [
-            "id",         # Identifiant unique du projet
-            "title",      # Titre du projet
-            "description",# Description détaillée
-            "type",       # Type ou catégorie du projet
-            "author",     # Auteur (en lecture seule)
-            "created_time"# Date de création (en lecture seule)
+            "id",         
+            "title",      
+            "description",
+            "type",       
+            "author",     
+            "created_time"
         ]
         read_only_fields = ["id", "author", "created_time"]
 
@@ -43,10 +43,10 @@ class ContributorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contributor
         fields = [
-            "id",          # Identifiant unique
-            "user",        # Contributeur (en lecture seule)
-            "project",     # Projet associé (en lecture seule)
-            "created_time" # Date d'ajout (en lecture seule)
+            "id",          
+            "user",        
+            "project",     
+            "created_time" 
         ]
         read_only_fields = ["id", "user", "project", "created_time"]
 
@@ -76,16 +76,16 @@ class IssueSerializer(serializers.ModelSerializer):
     class Meta:
         model = Issue
         fields = [
-            "id",            # Identifiant unique de l'issue
-            "title",         # Titre de l'issue
-            "description",   # Description détaillée
-            "tag",           # Étiquette de catégorie
-            "priority",      # Priorité
-            "status",        # Statut actuel
-            "project",       # Projet parent
-            "author",        # Auteur (en lecture seule)
-            "assignee_user", # Utilisateur assigné (optionnel)
-            "created_time"   # Date de création (en lecture seule)
+            "id",            
+            "title",        
+            "description",   
+            "tag",           
+            "priority",      
+            "status",        
+            "project",       
+            "author",        
+            "assignee_user", 
+            "created_time"   
         ]
         read_only_fields = ["id", "author", "created_time"]
 
@@ -124,10 +124,10 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = [
-            "id",           # Identifiant unique du commentaire (UUID)
-            "description",  # Contenu du commentaire
-            "author",       # Auteur (en lecture seule)
-            "issue",        # Issue parente (optionnel)
-            "created_time"  # Date de création (en lecture seule)
+            "id",           
+            "description",  
+            "author",       
+            "issue",        
+            "created_time"  
         ]
         read_only_fields = ["id", "author", "created_time"]

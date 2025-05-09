@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 from rest_framework import permissions as drf_permissions
-from .permissions import IsAuthor, IsContributor, IsAuthorOrReadOnly
+from .permissions import IsAuthor, IsContributor
 from .models import Project, Contributor, Issue, Comment
 from .serializers import (
     ProjectSerializer,
@@ -38,8 +38,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
         """
         Définit dynamiquement les permissions selon l'action :
         - update, partial_update, destroy : IsAuthor
-        - retrieve, list                : IsContributor
-        - autres (create)              : IsAuthenticated
+        - retrieve, list : IsContributor
+        - autres (create) : IsAuthenticated
         """
         if self.action in ["update", "partial_update", "destroy"]:
             return [drf_permissions.IsAuthenticated(), IsAuthor()]
@@ -61,7 +61,7 @@ class ContributorViewSet(viewsets.ModelViewSet):
     ViewSet pour gérer les contributeurs d'un projet.
 
     - Sans paramètre project_pk : renvoie tous les contributeurs (flat routes).
-    - Avec project_pk         : renvoie les contributeurs de ce projet uniquement.
+    - Avec project_pk : renvoie les contributeurs de ce projet uniquement.
     """
     serializer_class = ContributorSerializer
     permission_classes = [drf_permissions.IsAuthenticated]
@@ -98,7 +98,7 @@ class IssueViewSet(viewsets.ModelViewSet):
         Retourne les issues accessibles :
         - Swagger : queryset vide
         - nested (project_pk) : issues du projet où l'utilisateur contribue
-        - flat list            : issues de tous les projets de l'utilisateur
+        - flat list           : issues de tous les projets de l'utilisateur
         """
         if getattr(self, 'swagger_fake_view', False):
             return Issue.objects.none()

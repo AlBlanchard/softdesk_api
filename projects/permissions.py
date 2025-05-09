@@ -1,15 +1,7 @@
 from rest_framework import permissions
 from rest_framework.permissions import BasePermission
 from .models import Contributor, Project, Issue, Comment
-
-
-from rest_framework.permissions import BasePermission
 from rest_framework.exceptions import ValidationError
-from .models import Contributor, Issue
-
-from rest_framework.permissions import BasePermission
-from rest_framework.exceptions import ValidationError
-from .models import Contributor, Issue, Project, Comment
 
 
 class IsContributor(BasePermission):
@@ -18,11 +10,11 @@ class IsContributor(BasePermission):
     ou à créer des ressources liées à ce projet.
 
     - Pour une POST sur les commentaires :
-      * Route imbriquée       -> utilise 'issue_pk' de l'URL
-      * Route plate (/comments/) -> exige 'issue' dans le JSON
+      * Route imbriquée -> utilise issue_pk de l'URL
+      * Route plate -> exige issue dans le JSON
     - Pour une POST sur issues/contributors :
-      * Route imbriquée (/projects/{project_pk}/...) -> utilise 'project_pk'
-      * Route plate (/issues/, /contributors/)         -> exige 'project' dans le JSON
+      * Route imbriquée -> utilise project_pk
+      * Route plate -> exige project dans le JSON
     - Si ni clé URL ni champ requis présent : lève ValidationError (400).
     - En cas d'absence de contributor : renvoie False => 403 Forbidden.
     - Pour les autres méthodes (GET, PUT, DELETE), délègue à has_object_permission.
@@ -47,7 +39,7 @@ class IsContributor(BasePermission):
                     raise ValidationError({'issue': 'Issue introuvable pour création de commentaire.'})
                 project_id = issue.project.id
             else:
-                # Flat : /comments/ -> require 'issue'
+                # Flat : /comments/ -> require issue
                 issue_id = request.data.get('issue')
                 if not issue_id:
                     raise ValidationError({'issue': 'Le champ issue est requis.'})
